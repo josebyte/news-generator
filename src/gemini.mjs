@@ -1,7 +1,7 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
 /**
- * Lógica para interactuar con Gemini 2.5 Flash
+ * Lógica para interactuar con Gemini Flash
  * @param {Object} noticia - Objeto con title, content y sourceUrl
  * @param {Object} config - Configuración desde news.config.json
  * @param {String} domain - Dominio
@@ -31,8 +31,10 @@ export async function generarContenido(noticia, config, domain) {
     `;
 
     try {
+        await sleep(1500); //wait before
         const result = await model.generateContent(prompt);
         const text = result.response.text();
+        await sleep(1500); //wait after
         return JSON.parse(text);
     } catch (error) {
         console.error("❌ Error en la generación con Gemini:", error.message);
