@@ -25,7 +25,7 @@ export async function generarContenido(noticia, config) {
           "section": "Una de las permitidas", 
           "tags": ["tag1", "tag2"], 
           "content": "Cuerpo de la noticia en Markdown", 
-          "image": "src absoluto de la imagen original" 
+          "image": "src de la imagen original" 
         }
     `;
 

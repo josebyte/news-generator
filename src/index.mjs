@@ -11,9 +11,18 @@ export async function processArticle(noticia, config) {
     if (!art) throw new Error("No se pudo generar contenido para: " + noticia.title);
 
     // 2. Gestionar Imagen
-    if (art.image && art.image.startsWith('http')) {
+    if (art.image) {
         const imagesFolder = path.join(process.cwd(), 'public/images/noticias');
-        const localPath = await descargarImagen(art.image, imagesFolder);
+
+        let finalImageUrl = art.image || null;
+
+        // Si la IA devuelve una ruta relativa, intentamos reconstruirla
+        if (finalImageUrl && !finalImageUrl.startsWith('http')) {
+            const domain = new URL(noticia.sourceUrl).origin;
+            finalImageUrl = new URL(finalImageUrl, domain).href;
+        }
+
+        const localPath = await descargarImagen(finalImageUrl, imagesFolder);
         art.image = localPath || art.image;
     }
 
