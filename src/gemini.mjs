@@ -19,7 +19,7 @@ export async function generarContenido(noticia, config, domain) {
         Contenido de referencia: ${noticia.content}
         Secciones permitidas: ${config.sections.join(', ')}
         
-        IMPORTANTE: Devuelve estrictamente un JSON con este formato y rellena la image con el src de la imagen original, si la ruta es relativa y no tienes el dominio no lo inventes usa ${domain} y concatenalo con la url relativa de la imagen:
+        IMPORTANTE: Devuelve estrictamente un JSON con este formato y rellena la image con el src de la imagen original sin inventar, si la ruta de la imagen es relativa pon la ruta que tengas sin inventar nada:
         { 
           "title": "Título optimizado", 
           "summary": "Resumen corto", 
