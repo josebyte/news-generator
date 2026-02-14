@@ -16,6 +16,7 @@ GEMINI_API_KEY=tu_api_key_aqui
 ```
 {
   "collectionDir": "src/content/noticias",
+  "publicImagesDir": "src/assets/noticias",
   "limitPerSource": 3,
   "sections": ["Tecnología", "IA", "Ciencia"],
   "basePrompt": "Eres un periodista de tecnología objetivo y conciso.",

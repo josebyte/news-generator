@@ -13,7 +13,7 @@ export async function processArticle(noticia, config) {
 
     // 2. Gestionar Imagen
     if (art.image) {
-        const imagesFolder = path.join(process.cwd(), 'public/images/noticias');
+        const imagesFolder = path.join(process.cwd(), config.publicImagesDir);
 
         console.log("art.image")
         console.log(art.image)
