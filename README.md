@@ -3,7 +3,7 @@
 ## Install
 
 ```sh
-npm install git+https://github.com/josebyte/news-generator-core.git
+npm install git+https://github.com/josebyte/news-generator.git
 ```
 
 ## Requirements
