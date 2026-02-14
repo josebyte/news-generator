@@ -1,0 +1,14 @@
+{
+  "name": "@josebyte/news-generator",
+  "version": "1.0.0",
+  "type": "module",
+  "bin": {
+    "generate-news": "./bin/cli.mjs"
+  },
+  "main": "./src/index.mjs",
+  "dependencies": {
+    "@google/generative-ai": "^0.24.1",
+    "dotenv": "^17.3.1",
+    "slugify": "^1.6.6"
+  }
+}
