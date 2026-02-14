@@ -32,8 +32,6 @@ export async function processArticle(noticia, config) {
         art.image = localPath || art.image;
     }
 
-    console.log(fileName)
-
     // 3. Guardar Markdown
     const fileName = await guardarNoticia(art, config, noticia.sourceUrl);
     return fileName;
