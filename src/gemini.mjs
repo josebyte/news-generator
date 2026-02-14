@@ -29,9 +29,14 @@ export async function generarContenido(noticia, config) {
         }
     `;
 
+    console.log("prompt")
+    console.log(prompt)
+
     try {
         const result = await model.generateContent(prompt);
         const text = result.response.text();
+
+        console.log(text)
         return JSON.parse(text);
     } catch (error) {
         console.error("❌ Error en la generación con Gemini:", error.message);
