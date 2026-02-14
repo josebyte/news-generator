@@ -1,5 +1,5 @@
 import { generarContenido } from "./gemini.mjs";
-import { descargarImagen, guardarNoticia } from "./processor.mjs";
+import { descargarImagen, guardarNoticia, obtenerDominio } from "./processor.mjs";
 import path from "node:path";
 
 /**
@@ -7,7 +7,8 @@ import path from "node:path";
  */
 export async function processArticle(noticia, config) {
     // 1. Generar con IA
-    const art = await generarContenido(noticia, config);
+    const domain = obtenerDominio(noticia.sourceUrl);
+    const art = await generarContenido(noticia, config, domain);
     if (!art) throw new Error("No se pudo generar contenido para: " + noticia.title);
 
     // 2. Gestionar Imagen
@@ -20,13 +21,9 @@ export async function processArticle(noticia, config) {
 
         // Si la IA devuelve una ruta relativa, intentamos reconstruirla
         if (finalImageUrl && !finalImageUrl.startsWith('http')) {
-            const domain = new URL(noticia.sourceUrl).origin;
-            console.log("domain")
-            console.log(domain)
+            const domain = obtenerDominio(noticia.sourceUrl)
             finalImageUrl = new URL(finalImageUrl, domain).href;
         }
-        console.log("finalImageUrl")
-        console.log(finalImageUrl)
 
         const localPath = await descargarImagen(finalImageUrl, imagesFolder);
         art.image = localPath || art.image;

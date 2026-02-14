@@ -52,3 +52,18 @@ ${art.content}`;
     await fs.writeFile(fullPath, fileContent);
     return fileName;
 }
+
+/**
+ * Extrae el dominio base de una URL (ej: https://sub.dominio.com/path -> dominio.com)
+ * @param {string} urlString
+ * @returns {string} Dominio limpio
+ */
+export function obtenerDominio(urlString) {
+    try {
+        const url = new URL(urlString);
+        return url.origin; // Esto mantiene el http/https y el www.
+    } catch (error) {
+        console.error("❌ URL no válida:", urlString);
+        return "fuente-desconocida";
+    }
+}

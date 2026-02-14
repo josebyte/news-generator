@@ -4,8 +4,9 @@ import { GoogleGenerativeAI } from "@google/generative-ai";
  * Lógica para interactuar con Gemini 2.5 Flash
  * @param {Object} noticia - Objeto con title, content y sourceUrl
  * @param {Object} config - Configuración desde news.config.json
+ * @param {String} domain - Dominio
  */
-export async function generarContenido(noticia, config) {
+export async function generarContenido(noticia, config, domain) {
     const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
     const model = genAI.getGenerativeModel({
         model: "gemini-3-flash-preview",
@@ -25,18 +26,13 @@ export async function generarContenido(noticia, config) {
           "section": "Una de las permitidas", 
           "tags": ["tag1", "tag2"], 
           "content": "Cuerpo de la noticia en Markdown", 
-          "image": "src de la imagen original" 
+          "image": "src de la imagen original, si no tienes el dominio no lo inventes, usa ${domain}" 
         }
     `;
-
-    console.log("prompt")
-    console.log(prompt)
 
     try {
         const result = await model.generateContent(prompt);
         const text = result.response.text();
-
-        console.log(text)
         return JSON.parse(text);
     } catch (error) {
         console.error("❌ Error en la generación con Gemini:", error.message);
