@@ -1,6 +1,11 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
 /**
+ * Función auxiliar para pausar la ejecución (definición de sleep)
+ */
+const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+
+/**
  * Lógica para interactuar con Gemini Flash
  * @param {Object} noticia - Objeto con title, content y sourceUrl
  * @param {Object} config - Configuración desde news.config.json
