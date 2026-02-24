@@ -42,6 +42,9 @@ export async function processArticle(noticia, config) {
     if (!art.image) {
         console.log("🔍 IA no devolvió imagen, buscando en metadatos o HTML...");
 
+
+        console.log("noticia")
+        console.log(noticia)
         // Buscamos la URL en posibles campos donde un parseador XML genérico guarda <media:content>
         // Adaptado para: item['media:content'].url o item.mediaContent.url
         const imagenMetadata =
