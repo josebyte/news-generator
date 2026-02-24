@@ -1,105 +1,82 @@
-import * as cheerio from 'cheerio';
 import path from "node:path";
 import { generarContenido } from "./gemini.mjs";
 import { descargarImagen, guardarNoticia, obtenerDominio } from "./processor.mjs";
 
 /**
- * Extrae la primera imagen de un string HTML y la convierte en URL absoluta
- */
-export function extraerImagenRss(htmlContent, sourceUrl) {
-    if (!htmlContent || typeof htmlContent !== 'string') return null;
-
-    try {
-        const $ = cheerio.load(htmlContent);
-        // Buscamos la primera imagen
-        const imgSrc = $('img').attr('src');
-
-        if (!imgSrc) return null;
-
-        // Si la ruta es relativa, la convertimos en absoluta
-        if (!imgSrc.startsWith('http')) {
-            const domain = obtenerDominio(sourceUrl);
-            return new URL(imgSrc, domain).href;
-        }
-        return imgSrc;
-    } catch (e) {
-        return null;
-    }
-}
-
-/**
- * Orquestador: Procesa la lógica de cada noticia
+ * Orquestador: Procesa la lógica de cada noticia de forma robusta.
+ * @param {Object} noticia - Objeto con la información base del RSS.
+ * @param {Object} config - Configuración global de la aplicación.
  */
 export async function processArticle(noticia, config) {
     const domain = obtenerDominio(noticia.sourceUrl);
 
-    // 1. Generar contenido con IA
-    // Le pasamos la noticia original para que Gemini tenga contexto
-    const art = await generarContenido(noticia, config, domain);
-    if (!art) throw new Error("No se pudo generar contenido para: " + noticia.title);
-
-    // 2. Gestión de Imagen (Lógica de rescate)
-    if (!art.image) {
-        console.log("🔍 IA no devolvió imagen, buscando en metadatos o HTML...");
-
-
-        console.log("noticia")
-        console.log(noticia)
-        // Buscamos la URL en posibles campos donde un parseador XML genérico guarda <media:content>
-        // Adaptado para: item['media:content'].url o item.mediaContent.url
-        const imagenMetadata =
-            noticia.mediaContent?.url ||
-            noticia.mediaContent?.['@_url'] ||
-            noticia.enclosure?.url;
-
-        if (imagenMetadata) {
-            art.image = imagenMetadata;
-        } else {
-            // Si no hay metadato, rascamos el HTML de la descripción
-            const htmlParaBuscar = noticia.description || noticia.content || "";
-            art.image = extraerImagenRss(htmlParaBuscar, noticia.sourceUrl);
-        }
+    // 1. Generación de contenido con IA
+    // Implementamos un bloque try/catch específico para la IA
+    let art;
+    try {
+        art = await generarContenido(noticia, config, domain);
+        if (!art) throw new Error("La IA devolvió un contenido vacío.");
+    } catch (error) {
+        throw new Error(`Error en Gemini: ${error.message}`);
     }
 
-    // 3. Descarga y Procesamiento de la imagen
-    if (art.image) {
-        const imagesFolder = path.join(process.cwd(), config.publicImagesDir);
-        let finalImageUrl = art.image;
+    // 2. Gestión de la imagen (Fallback y Normalización)
+    // Priorizamos la imagen de la IA, si no existe, usamos la del RSS original
+    const rawImageUrl = art.image || noticia.image;
 
-        // Asegurar URL absoluta
-        if (finalImageUrl && !finalImageUrl.startsWith('http')) {
-            finalImageUrl = new URL(finalImageUrl, domain).href;
-        }
+    if (rawImageUrl) {
+        const imagesFolder = path.resolve(process.cwd(), config.publicImagesDir);
+        let finalImageUrl = rawImageUrl;
 
+        // Normalización de URL: Maneja URLs relativas y protocolos faltantes
         try {
+            if (!finalImageUrl.startsWith('http')) {
+                // Intentamos construir la URL absoluta usando el dominio de la fuente
+                finalImageUrl = new URL(finalImageUrl, domain).href;
+            }
+
             console.log(`📥 Descargando imagen: ${finalImageUrl}`);
             const localPath = await descargarImagen(finalImageUrl, imagesFolder);
-            // Reemplazamos la URL remota por la ruta local para el Markdown
-            art.image = localPath || art.image;
+
+            // Si la descarga fue exitosa, usamos el path local; si no, mantenemos la URL remota
+            art.image = localPath || finalImageUrl;
         } catch (err) {
-            console.error("⚠️ Fallo en descarga de imagen:", err.message);
-            // Mantenemos la original si falla la descarga
+            console.warn(`⚠️ No se pudo procesar la imagen (${finalImageUrl}): ${err.message}`);
+            art.image = finalImageUrl; // Fallback a URL remota
         }
     }
 
-    // 4. Guardar archivo final
-    const fileName = await guardarNoticia(art, config, noticia.sourceUrl);
-    return fileName;
+    // 3. Persistencia
+    // Pasamos la URL original para trazabilidad en el frontmatter
+    try {
+        const fileName = await guardarNoticia(art, config, noticia.sourceUrl);
+        return fileName;
+    } catch (error) {
+        throw new Error(`Error al guardar el archivo: ${error.message}`);
+    }
 }
 
 /**
- * Función de ejemplo para iterar sobre tus noticias
- * @param {Array} noticias - Array de objetos noticia ya parseados del XML
- * @param {Object} config - Configuración de la app
+ * Itera sobre el array de noticias secuencialmente para respetar límites de API.
  */
 export async function mainLoop(noticias, config) {
-    for (const noticia of noticias) {
+    if (!Array.isArray(noticias) || noticias.length === 0) {
+        console.log("Empty news list. Nothing to process.");
+        return;
+    }
+
+    console.log(`\n--- Iniciando procesamiento de ${noticias.length} noticias ---`);
+
+    for (const [index, noticia] of noticias.entries()) {
         try {
-            console.log(`\n🚀 Procesando: ${noticia.title}`);
+            console.log(`\n[${index + 1}/${noticias.length}] 🚀 Procesando: ${noticia.title}`);
             const result = await processArticle(noticia, config);
-            console.log(`✅ Finalizado con éxito: ${result}`);
+            console.log(`✅ Resultado: ${result}`);
         } catch (error) {
-            console.error(`❌ Error en el proceso: ${error.message}`);
+            // Logueamos el error pero no detenemos el bucle para que procese la siguiente noticia
+            console.error(`❌ Error en "${noticia.title.substring(0, 30)}...": ${error.message}`);
         }
     }
+
+    console.log("\n--- Tareas finalizadas ---");
 }

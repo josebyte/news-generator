@@ -24,14 +24,13 @@ export async function generarContenido(noticia, config, domain) {
         Contenido de referencia: ${noticia.content}
         Secciones permitidas: ${config.sections.join(', ')}
         
-        IMPORTANTE: Devuelve estrictamente un JSON con este formato y rellena la image con el src de la imagen original sin inventar, si la ruta de la imagen es relativa pon la ruta que tengas sin inventar nada:
+        IMPORTANTE: Devuelve estrictamente un JSON con este formato:
         { 
           "title": "Título optimizado", 
           "summary": "Resumen corto", 
           "section": "Una de las permitidas", 
           "tags": ["tag1", "tag2"], 
-          "content": "Cuerpo de la noticia en Markdown", 
-          "image": "si existe src de la imagen original" 
+          "content": "Cuerpo de la noticia en Markdown"
         }
     `;
 
