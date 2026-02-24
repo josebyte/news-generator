@@ -22,27 +22,34 @@ export async function processArticle(noticia, config) {
 
     // 2. Gestión de la imagen (Fallback y Normalización)
     // Priorizamos la imagen de la IA, si no existe, usamos la del RSS original
+// 2. Gestión de la imagen (Fallback y Normalización)
     const rawImageUrl = art.image || noticia.image;
 
     if (rawImageUrl) {
         const imagesFolder = path.resolve(process.cwd(), config.publicImagesDir);
-        let finalImageUrl = rawImageUrl;
+        let finalImageUrl = rawImageUrl.trim();
 
-        // Normalización de URL: Maneja URLs relativas y protocolos faltantes
         try {
-            if (!finalImageUrl.startsWith('http')) {
-                // Intentamos construir la URL absoluta usando el dominio de la fuente
-                finalImageUrl = new URL(finalImageUrl, domain).href;
+            // A. Manejar URLs que empiezan con // (ej: //cdn.com/img.jpg)
+            if (finalImageUrl.startsWith('//')) {
+                finalImageUrl = `https:${finalImageUrl}`;
+            }
+            // B. Manejar URLs relativas (ej: /images/foto.jpg o foto.jpg)
+            else if (!finalImageUrl.startsWith('http')) {
+                // Aseguramos que el dominio tenga protocolo para que new URL no falle
+                const baseForUrl = domain.startsWith('http') ? domain : `https://${domain}`;
+                finalImageUrl = new URL(finalImageUrl, baseForUrl).href;
             }
 
             console.log(`📥 Descargando imagen: ${finalImageUrl}`);
             const localPath = await descargarImagen(finalImageUrl, imagesFolder);
 
-            // Si la descarga fue exitosa, usamos el path local; si no, mantenemos la URL remota
+            // Importante: Guardamos la ruta local para el Markdown, o la remota si falla
             art.image = localPath || finalImageUrl;
         } catch (err) {
-            console.warn(`⚠️ No se pudo procesar la imagen (${finalImageUrl}): ${err.message}`);
-            art.image = finalImageUrl; // Fallback a URL remota
+            console.warn(`⚠️ Error al normalizar/descargar imagen: ${err.message}`);
+            // Si todo falla, intentamos dejar la original por si acaso
+            art.image = finalImageUrl;
         }
     }
 
